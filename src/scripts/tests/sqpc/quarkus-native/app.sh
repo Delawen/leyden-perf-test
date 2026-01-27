@@ -24,6 +24,8 @@ function start_app_native() {
 
 	local preamble=""
 	if [[ -v HARDWARE_CONFIGURED && "$HARDWARE_CONFIGURED" == true ]]; then
+		export LD_PRELOAD=${ASYNC_PROFILER}
+		export ASPROF_COMMAND=start,event=wall,file=${TEST_OUT_DIR}/${results_name}-profile.html 
 		preamble="taskset -c $TEST_DRIVER_CPUS "
 	fi
 	
@@ -34,10 +36,6 @@ function start_app_native() {
 	local app_pid
 	$preamble$exec_path  >> "$outfile" 2>&1 &
 	app_pid=$!
-
-	if [[ -v HARDWARE_CONFIGURED && "$HARDWARE_CONFIGURED" == true ]]; then
-		perf record --cpu "$TEST_APP_CPUS" -o "${TEST_OUT_DIR}/${results_name}-app.perf" -p $app_pid &
-	fi
 
 	local pidfile="${TEST_OUT_DIR}/${results_name}-app.pid"
 	echo "$app_pid" > "$pidfile"
