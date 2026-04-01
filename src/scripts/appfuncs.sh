@@ -58,6 +58,8 @@ function start_app() {
 	fi
 
 	local app_pid
+	date +%s.%N
+	date
 	"${preamble[@]}" java ${TEST_JAVA_OPTS} ${TEST_STRAT_OPTS} -jar "${jar_path}" >> "$outfile" 2>&1 &
 	app_pid=$!
 	
@@ -157,15 +159,17 @@ function stop_process() {
 # Returns:
 #   0 if port 8080 is open, 1 on timeout, 2 if application process is not running
 function wait_for_8080() {
+    local time=$(date +%s%N)
+	date +%s.%N
+	date
     local results_name=$1
 	local app_pid
 	app_pid=$(get_app_pid "${results_name}")
 	if [[ "${app_pid}" == "" ]]; then
 		return 2
 	fi
-    local time=$(date +%s%N)
     echo "   - Waiting for port 8080..."
-    for ((i=0; i<360; i++)); do
+    for ((i=0; i<600000; i++)); do
 		if ! kill -0 "${app_pid}" > /dev/null 2>&1; then
 			echo -e "   - ${BOLD}${RED}✗ Application process has exited unexpectedly${NORMAL}"
 			echo -e "   - ${BOLD}${RED}✗ ${results_name} test application not running${NORMAL}"
@@ -179,9 +183,10 @@ function wait_for_8080() {
         # Using 127.0.0.1 is safer than localhost on macOS to avoid IPv6 ::1 mismatch
         if (echo -n < /dev/tcp/127.0.0.1/8080) >/dev/null 2>&1; then
             echo "${results_name},$(($(date +%s%N) - time))" >> "${TEST_OUT_DIR}/time-to-8080.csv"
+    		echo "   - Waited "$i" attempts"
             return 0
         fi
-		sleep 0.05
+		sleep 0.0001
     done
     echo "   - Timeout waiting for port 8080"
     return 1
